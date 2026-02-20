@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 700
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -86,6 +87,19 @@ int main()
 {
 	struct command_line *curr_command;
     int childStatus;
+
+    //Signal handler for SIGINT
+    struct sigaction SIGINT_action = {0};
+	SIGINT_action.sa_handler = handle_SIGINT;
+	sigfillset(&SIGINT_action.sa_mask);
+	SIGINT_action.sa_flags = 0;
+	sigaction(SIGINT, &SIGINT_action, NULL);
+
+    struct sigaction SIGTSTP_action = {0};
+	SIGTSTP_action.sa_handler = handle_SIGTSTP;
+	sigfillset(&SIGTSTP_action.sa_mask);
+	SIGTSTP_action.sa_flags = 0;
+	sigaction(SIGTSTP, &SIGTSTP_action, NULL);
 
 	while(true)
 	{
