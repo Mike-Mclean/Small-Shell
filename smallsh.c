@@ -97,6 +97,17 @@ int main()
             continue;
         }
 
+        if (!strcmp(token, "status")){
+            if (WIFSIGNALED(fg_flag)){
+                printf("Terminates by signal %d\n", WTERMSIG(fg_flag));
+            } else {
+                printf("Exit value: %d\n", WEXITSTATUS(fg_flag));
+            }
+            fflush(stdout);
+            free_cmd(curr_command);
+            continue;
+        }
+
 	}
 	return EXIT_SUCCESS;
 }
