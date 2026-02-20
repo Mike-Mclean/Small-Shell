@@ -4,12 +4,14 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
 #define INPUT_LENGTH 2048
 #define MAX_ARGS 512
 
 int fg_process = -1;
-int sigtstp_flag = 0;
+int fg_only_flag = 0;
 int fg_flag = 0;
 
 struct command_line
@@ -70,7 +72,7 @@ int main()
 		curr_command = parse_input();
         char *token = curr_command->argv[0];
 
-        if (curr_command->is_bg && sigtstp_flag){
+        if (curr_command->is_bg && fg_only_flag){
             curr_command->is_bg = false;
         }
 
@@ -106,6 +108,59 @@ int main()
             fflush(stdout);
             free_cmd(curr_command);
             continue;
+        }
+
+        pid_t childpid = fork();
+
+        if (childpid == -1){
+            perror("Fork failed!");
+            exit(1);
+        } else if(childpid == 0) {
+            //Child Process
+
+            //Redirect output if file is given
+            if (curr_command->output_file){
+                int fd_out = open(curr_command->output_file, O_WRONLY | O_CREAT | O_TRUNC, 0640);
+                if (fd_out == -1){
+                    perror("Error opening file");
+                    exit(1);
+                }
+                dup2(fd_out, STDOUT_FILENO);
+                close(fd_out);
+            }
+            //Redirect input if file is given
+            if (curr_command->input_file){
+                int fd_in = open(curr_command->input_file, O_RDONLY, 0640);
+                if (fd_in == -1){
+                    perror("Error opening file");
+                    exit(1);
+                }
+                dup2(fd_in, STDIN_FILENO);
+                close(fd_in);
+            }
+            //Redirect ouput of background process if no file specified
+            if (curr_command->is_bg && !curr_command->output_file && !fg_only_flag){
+                int fd_out = open("/dev/null", O_WRONLY);
+                dup2(fd_out, STDOUT_FILENO);
+                close(fd_out);
+            }
+            //Redirect input of background process if not file specified
+            if (curr_command->is_bg && !curr_command->input_file && !fg_only_flag){
+				int fd_in = open("/dev/null", O_RDONLY);
+				dup2(fd_in, STDIN_FILENO);
+				close(fd_in);
+			}
+
+            curr_command->argv[curr_command->argc] = NULL;
+
+            execvp(token, curr_command->argv);
+			perror("Error with execvp");
+			exit(2);
+
+        } else {
+            if (!curr_command->is_bg){
+                fg_process = getpid();
+            }
         }
 
 	}
