@@ -66,6 +66,7 @@ void free_cmd(struct command_line *cmd){
 int main()
 {
 	struct command_line *curr_command;
+    int childStatus;
 
 	while(true)
 	{
@@ -158,11 +159,22 @@ int main()
 			exit(2);
 
         } else {
-            if (!curr_command->is_bg){
-                fg_process = getpid();
+            //Parent case
+            if (curr_command->is_bg && !fg_only_flag){
+                printf("Background pid is %d\n", childpid);
+                fflush(stdout);
+            } else {
+                fg_process = childpid;
+                waitpid(childpid, &childStatus, 0);
+                fg_process = -1;
+                fg_flag = childStatus;
+                if (WIFSIGNALED(childStatus)){
+                    printf("Terminated by signal %d\n", WTERMSIG(childStatus));
+                    fflush(stdout);
+                }
             }
+            free_cmd(curr_command);
         }
-
 	}
 	return EXIT_SUCCESS;
 }
