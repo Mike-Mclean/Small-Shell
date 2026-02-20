@@ -11,7 +11,7 @@
 #define MAX_ARGS 512
 
 int fg_process = -1;
-int fg_only_flag = 0;
+int fg_only_flag = false;
 int fg_flag = 0;
 
 struct command_line
@@ -61,6 +61,25 @@ void free_cmd(struct command_line *cmd){
     free(cmd->output_file);
 
     free(cmd);
+}
+
+void handle_SIGINT(int signo){
+    if (fg_process > -1){
+        kill(fg_process, SIGINT);
+    }
+}
+
+void handle_SIGTSTP(int signo){
+    char *exit_message = "\nExiting foreground-only mode\n";
+    char *enter_message = "\nEntering foreground-only mode (& is now ignored)\n";
+
+    if (fg_only_flag){
+        fg_only_flag = false;
+        write(STDOUT_FILENO, exit_message, 30);
+    } else {
+        fg_only_flag = true;
+        write(STDOUT_FILENO, enter_message, 50);
+    }
 }
 
 int main()
