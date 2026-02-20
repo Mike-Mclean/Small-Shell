@@ -19,13 +19,12 @@ struct command_line
 	bool is_bg;
 };
 
-
 struct command_line *parse_input()
 {
 	char input[INPUT_LENGTH];
 	struct command_line *curr_command = (struct command_line *) calloc(1, sizeof(struct command_line));
 
-	printf(": ");
+	printf("$ ");
 	fflush(stdout);
 	fgets(input, INPUT_LENGTH, stdin);
 
@@ -45,6 +44,21 @@ struct command_line *parse_input()
 	return curr_command;
 }
 
+void free_cmd(struct command_line *cmd){
+    if (!cmd){
+        return;
+    }
+
+    for (int i = 0; i < cmd->argc; i++){
+        free(cmd->argv[i]);
+    }
+
+    free(cmd->input_file);
+    free(cmd->output_file);
+
+    free(cmd);
+}
+
 int main()
 {
 	struct command_line *curr_command;
@@ -52,6 +66,16 @@ int main()
 	while(true)
 	{
 		curr_command = parse_input();
+        char *token = curr_command->argv[0];
+
+        if (curr_command->is_bg && sigtstp_flag){
+            curr_command->is_bg = false;
+        }
+
+        if (!token || token[0] == '#'){
+            free_cmd(curr_command);
+            continue;
+        }
 
 	}
 	return EXIT_SUCCESS;
