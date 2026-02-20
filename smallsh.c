@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+#include <unistd.h>
 
 #define INPUT_LENGTH 2048
 #define MAX_ARGS 512
@@ -73,6 +75,24 @@ int main()
         }
 
         if (!token || token[0] == '#'){
+            free_cmd(curr_command);
+            continue;
+        }
+
+        if (!strcmp(token, "exit")){
+            free_cmd(curr_command);
+            kill(0, SIGTERM);
+            break;
+        }
+
+        if (!strcmp(token, "cd")){
+            if (!curr_command->argv[1]){
+                chdir(getenv("HOME"));
+            } else if (chdir(curr_command->argv[1]) != 0){
+                perror("Directory Change Failed");
+            } else {
+                chdir(curr_command->argv[1]);
+            }
             free_cmd(curr_command);
             continue;
         }
