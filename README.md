@@ -1,7 +1,7 @@
-#Small Shell
+# Small Shell
 Small shell is a Linux-like shell written in C. It allows for the execution of basic built-in Linux commands, foreground and background processes, input and output redirection and signal handling for SIGINT and SIGTSTP.
 
-##Features
+## Features
 - Custom command prompt (`$`)
 - Support for:
   - Foregroung and background processes (`&`)
@@ -20,7 +20,7 @@ Small shell is a Linux-like shell written in C. It allows for the execution of b
 ##Executing External Commands
 - All non built-in commands are executed using `fork()`, `exec()` family, and `waitpid()`
 
-##Rules and Limitations
+## Rules and Limitations
 -   Maximum command line length: 2048 characters
 -   Maximum arguments: 512
 -   Command arguments are separated by spaces
