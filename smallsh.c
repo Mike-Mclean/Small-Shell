@@ -66,6 +66,7 @@ void free_cmd(struct command_line *cmd){
 
 void handle_SIGINT(int signo){
     if (fg_process > -1){
+        printf("terminated by signal %d\n", signo);
         kill(fg_process, SIGINT);
     }
 }
@@ -87,6 +88,8 @@ int main()
 {
 	struct command_line *curr_command;
     int childStatus;
+    int status;
+    pid_t id;
 
     //Signal handler for SIGINT
     struct sigaction SIGINT_action = {0};
@@ -95,14 +98,32 @@ int main()
 	SIGINT_action.sa_flags = 0;
 	sigaction(SIGINT, &SIGINT_action, NULL);
 
+    //Signal Handler for SIGTSTP
     struct sigaction SIGTSTP_action = {0};
 	SIGTSTP_action.sa_handler = handle_SIGTSTP;
 	sigfillset(&SIGTSTP_action.sa_mask);
 	SIGTSTP_action.sa_flags = 0;
 	sigaction(SIGTSTP, &SIGTSTP_action, NULL);
 
+    struct sigaction SIGTERM_action = {0};
+	SIGTERM_action.sa_handler = SIG_DFL;
+	sigfillset(&SIGTERM_action.sa_mask);
+	SIGTERM_action.sa_flags = 0;
+	sigaction(SIGTERM, &SIGTERM_action, NULL);
+
 	while(true)
 	{
+        id = waitpid(-1, &status, WNOHANG);
+        while (id > 0){
+            if (WIFSIGNALED(status)){
+                printf("background pid %d is done: terminated by signal %d\n", id, WTERMSIG(status));
+            } else {
+                printf("background pid %d is done: exit value %d\n", id, WEXITSTATUS(status));
+            }
+            fflush(stdout);
+            id = waitpid(-1, &status, WNOHANG);
+        }
+
 		curr_command = parse_input();
         char *token = curr_command->argv[0];
 
