@@ -17,7 +17,7 @@ Small shell is a Linux-like shell written in C. It allows for the execution of b
   - `SIGTSTP` (Ctrl+Z)
 - Foreground-only mode toggle via `SIGTSTP`
 
-##Executing External Commands
+## Executing External Commands
 - All non built-in commands are executed using `fork()`, `exec()` family, and `waitpid()`
 
 ## Rules and Limitations
