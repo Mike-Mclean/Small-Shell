@@ -26,8 +26,8 @@ Small shell is a Linux-like shell written in C. It allows for the execution of b
 -   Maximum arguments: 512
 -   Command arguments are separated by spaces
 -   No support for:
-  - Pipes (`|`)
-  - Mid-line comments
+    - Pipe (`|`)
+    - In-line comments
 - If `&` appears as the final character of a command, the command runs as a background process.
 - If `&` appears anywhere else, its treated as an argument to a command
 - Built-in commands ignore `&` and always run in the forground
@@ -38,12 +38,14 @@ Small shell is a Linux-like shell written in C. It allows for the execution of b
 - Commands without an `&` at the end of the command are run in the foreground
 - All built-in commands are run in the foreground
 - If a foreground process is terminated by a signal, the shell will print a message:
+
   `termianted by signal 1234`
 ### Background
 - Commands with an `&` at the end are run in the background
 - The shell will immediately print:
   `background pis is <pid>`
 - When the background process completes, the following message will be printed before the next prompt:
+
   `background pid <pid> is done: exit value 1234`
 
 ## Signal Handling
@@ -51,4 +53,16 @@ Small shell is a Linux-like shell written in C. It allows for the execution of b
 - The shell program itself ignores `SIGINT`
 - Background processes ignores `SIGINT`
 - Forground processes will terminate on `SIGINT` and print the following message:
+
   `termiantes by signal 2`
+### SIGTSTP (CTRL + Z)
+- Toggles foreground-only mode. When enabled, `&` is ignored and all commands run in the foreground.
+- The shell starts with foreground-only mode disabled
+- When the shell first receives `SIGTSTP`, the following message is printed:
+
+  `Entering foreground-only mode (& is now ignored)`
+- When another `SIGTSTP` is sent to the shell, foreground-only mode is disabled again and the following message is printed:
+
+  `Exiting foreground-only mode`
+- All child processes (foreground and background) ignore SIGTSTP
+  
