@@ -12,7 +12,8 @@
 #define MAX_ARGS 512
 
 int fg_process = -1;
-int fg_only_flag = false;
+bool fg_only_flag = false;
+bool tstp_received = false;
 int fg_flag = 0;
 
 struct command_line
@@ -31,7 +32,10 @@ struct command_line *parse_input()
 
 	printf("$ ");
 	fflush(stdout);
-	fgets(input, INPUT_LENGTH, stdin);
+	if (fgets(input, INPUT_LENGTH, stdin) == NULL) {
+        clearerr(stdin);
+        return curr_command;
+    }
 
 	char *token = strtok(input, " \n");
 	while(token){
@@ -72,15 +76,21 @@ void handle_SIGINT(int signo){
 }
 
 void handle_SIGTSTP(int signo){
-    char *exit_message = "\nExiting foreground-only mode\n";
-    char *enter_message = "\nEntering foreground-only mode (& is now ignored)\n";
+    tstp_received = true;
+}
 
-    if (fg_only_flag){
-        fg_only_flag = false;
-        write(STDOUT_FILENO, exit_message, 30);
-    } else {
-        fg_only_flag = true;
-        write(STDOUT_FILENO, enter_message, 50);
+void check_SIGTSTP(){
+    if (tstp_received){
+        tstp_received = false;
+
+        if (fg_only_flag) {
+            fg_only_flag = false;
+            printf("\nExiting foreground-only mode\n");
+        } else {
+            fg_only_flag = true;
+            printf("\nEntering Foreground-only mode (& is now ignored)\n");
+        }
+        fflush(stdout);
     }
 }
 
@@ -123,6 +133,8 @@ int main()
             fflush(stdout);
             id = waitpid(-1, &status, WNOHANG);
         }
+
+        check_SIGTSTP();
 
 		curr_command = parse_input();
         char *token = curr_command->argv[0];
@@ -208,6 +220,12 @@ int main()
 
             curr_command->argv[curr_command->argc] = NULL;
 
+            struct sigaction ignore_action = {0};
+            ignore_action.sa_handler = SIG_IGN;
+            sigfillset(&ignore_action.sa_mask);
+            ignore_action.sa_flags = 0;
+            sigaction(SIGTSTP, &ignore_action, NULL);
+
             execvp(token, curr_command->argv);
 			perror("Error with execvp");
 			exit(2);
@@ -222,6 +240,9 @@ int main()
                 waitpid(childpid, &childStatus, 0);
                 fg_process = -1;
                 fg_flag = childStatus;
+
+                check_SIGTSTP();
+
                 if (WIFSIGNALED(childStatus)){
                     printf("Terminated by signal %d\n", WTERMSIG(childStatus));
                     fflush(stdout);
