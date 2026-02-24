@@ -19,6 +19,7 @@ Small shell is a Linux-like shell written in C. It allows for the execution of b
 
 ## Executing External Commands
 - All non built-in commands are executed using `fork()`, `exec()` family, and `waitpid()`
+- The parent forks a child process and the child calls `exec()` to run the command. If execution of the command fails, then the shell will display a message indicating the failure and the exit status will be set to 1.
 
 ## Rules and Limitations
 -   Maximum command line length: 2048 characters
@@ -31,4 +32,23 @@ Small shell is a Linux-like shell written in C. It allows for the execution of b
 - If `&` appears anywhere else, its treated as an argument to a command
 - Built-in commands ignore `&` and always run in the forground
 - Lines starting with `#` are treated as comments
-- Mid-line comments are not supported
+
+## Foreground and Background Processes
+### Foreground
+- Commands without an `&` at the end of the command are run in the foreground
+- All built-in commands are run in the foreground
+- If a foreground process is terminated by a signal, the shell will print a message:
+  `termianted by signal 1234`
+### Background
+- Commands with an `&` at the end are run in the background
+- The shell will immediately print:
+  `background pis is <pid>`
+- When the background process completes, the following message will be printed before the next prompt:
+  `background pid <pid> is done: exit value 1234`
+
+## Signal Handling
+### SIGINT (CTRL + C)
+- The shell program itself ignores `SIGINT`
+- Background processes ignores `SIGINT`
+- Forground processes will terminate on `SIGINT` and print the following message:
+  `termiantes by signal 2`
